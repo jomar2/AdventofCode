@@ -60,6 +60,23 @@ pair<int,int> shortestDistance(const pair<int,int> & Coordinate ,const vector<Ta
     return pair<int,int>(ID,shortestDistance);
 };
 
+int DistanceLowerThan(const pair<int,int> & Coordinate ,const vector<TargetCoordinate> & InputCoordinates,const int Limit)
+{
+    int accDistance = 0;
+    
+    for(auto input : InputCoordinates)
+    {
+        int distanceTmp = Distance(Coordinate,input.Pos);
+        accDistance += distanceTmp;
+        if(accDistance>=Limit)
+        {
+            return 0;
+        }
+    }
+ 
+    return 1;
+};
+
 int main()
 {
     /* Open File and add it to vector. */
@@ -67,6 +84,7 @@ int main()
     vector<TargetCoordinate> Data;
     ifstream myfile ("input.txt");
     string pos_x,pos_y;
+    int distanceLimit = 10000;
     if (myfile.is_open())
     {
         while ( getline (myfile,_line) )
@@ -89,90 +107,35 @@ int main()
             [&](const TargetCoordinate& left, const TargetCoordinate& right){
             return left.Pos.second <  right.Pos.second;});
     
+
+
     int size_x = size_max_x->Pos.first+2;
     int size_y = size_max_y->Pos.second+2;
     
     cout << "X: "<<size_x<<" Y: "<<size_y<<'\n';
     static vector<vector<int>> field(size_x,vector<int>(size_y));
   
-    for(auto coord = 0;coord<size_x; coord++)
-    {
-        pair<int,int> Candidate;
-        pair<int,int> topBorder = pair<int,int>(coord,0);
-        pair<int,int> bottomBorder = pair<int,int>(coord,size_y);   
-        
-        Candidate = shortestDistance(topBorder,Data);
-        Data[Candidate.first].valid = false;
-        Candidate = shortestDistance(bottomBorder,Data);
-        Data[Candidate.first].valid = false;
-    }
-
-    for(auto coord = 0;coord<size_y; coord++)
-    {
-        pair<int,int> Candidate;
-        pair<int,int> leftBorder = pair<int,int>(0,coord);
-        pair<int,int> rightBorder = pair<int,int>(size_x,coord);
-        Candidate = shortestDistance(leftBorder,Data);
-        Data[Candidate.first].valid = false;
-        Candidate = shortestDistance(rightBorder,Data);
-        Data[Candidate.first].valid = false;
-    }
-    int num = 0;
-    for(auto cand : Data)
-    {
-        if(cand.valid)
-        {
-            cout<<"Pos : "<< cand.Pos.first << ","<< cand.Pos.second << " is still valid"<<'\n'; 
-            num++;
-        }
-    }
-    cout<<"valid points: "<<num<<'\n'; 
     for(auto coordx = 0;coordx<size_x; coordx++)
     {
         for(auto coordy = 0;coordy<size_y; coordy++)
         {
-            pair<int,int> Candidate = {-1,50000};
             pair<int,int> CurrentCoordinate = pair<int,int>(coordx,coordy);
             
-            Candidate = shortestDistance(CurrentCoordinate,Data);
-            field[coordx][coordy] = Candidate.first;
+            field[coordx][coordy] = DistanceLowerThan(CurrentCoordinate,Data,distanceLimit);
         }
     }
 
-    int MaxArea = 0;
     int area = 0;
     int num_elements = 0;
-    for(auto candId = 0U; candId < Data.size();candId++)
-    {
-        if(Data[candId].valid)
-        {
-            area = 0;
-            vector< vector<int> >::iterator row;
-            vector<int>::iterator col;
-            for (row = field.begin(); row != field.end(); row++) {
-                for (col = row->begin(); col != row->end(); col++) {
-                    area += (*col == static_cast<int>(candId) ? 1 : 0);
-                    num_elements++;
-                }
-            }
-
-            if(MaxArea < area)
-            {
-                MaxArea = area;
-            }
-
-            /*
-            for (row = field.begin(); row != field.end(); row++) 
-            {
-                for (col = row->begin(); col != row->end(); col++) 
-                {
-                    cout << *col <<" "; 
-                }
-                cout << '\n';
-            }*/
+    vector< vector<int> >::iterator row;
+    vector<int>::iterator col;
+    for (row = field.begin(); row != field.end(); row++) {
+        for (col = row->begin(); col != row->end(); col++) {
+            area += *col;
+            num_elements++;
         }
     }
-    cout<<"Max Valid Area: "<< MaxArea<<'\n';
+    cout<<"Max Valid Area: "<< area<<'\n';
     cout<<"Elements checked: "<< num_elements<<'\n';
 
     return 0;
