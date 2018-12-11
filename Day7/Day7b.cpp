@@ -4,21 +4,59 @@
 #include <string>
 #include <algorithm>
 #include <sstream>
-#include <unordered_set>
+#include <map>
 using namespace std;
 
-// Ska börja på H
+class workItem
+{
+    public:
+    int workinstruction;
+    vector<int> requires;
+    workItem(int workitem, int require): workinstruction(workitem), requires(vector<int>(1,require)), timeLeft(60+workinstruction) {}
+    int timeLeft;
+    bool isDone(){return timeLeft==0;};
+    void addRequirement(int requirement){requires.push_back(requirement);};
+    void reduceTime(int elapsedTime){timeLeft -= elapsedTime;};
+    bool Taken = false;
+};
+
+bool available(workItem item,vector<int> workDoneList)
+{
+    for(auto requirement : item.requires)
+    {
+        cout<<"task: " <<item.workinstruction<<" Req: "<<requirement<<'\n';
+        if(find(workDoneList.begin(),workDoneList.end(),requirement) == workDoneList.end())
+        {
+
+            return false;
+        }
+    } 
+    cout<<"TASK: AVAILABLE"<<'\n';
+    return true;
+}
+
+
 int main()
 {
     /* Open File and add it to vector. */
     string _line;
     vector<string> DataLines;
-    ifstream myfile ("input.txt");
-    //ifstream myfile ("test1.txt");
+    map<char,int> charMap;
+
+    string alphabeth = {"ABCDEFGHIJKLMNOPQRSTUVWXYZ"};
+    for (uint32_t index = 1; index<=alphabeth.size();index++)
+    {
+        charMap[alphabeth[index-1]] = index;
+        //cout<<alphabeth[index-1]<<" = "<<index<<'\n';
+    }
+
+    //ifstream myfile ("input.txt");
+    ifstream myfile ("test1.txt");
     vector<char> Step;
     vector<char> Require;
-    vector<pair<string,string>> Instructions;
+    vector<workItem> work;
     vector<string> InputInst;
+    vector<int> workDone(0);
 
     if (myfile.is_open())
     {
@@ -30,94 +68,77 @@ int main()
     }
     else cout << "Unable to open file"; 
 
-    //sort(InputInst.begin(),InputInst.end());
     for(auto line : InputInst)
     {
-        char step = *line.substr(line.find("step")+5,1).c_str();
-        Step.push_back(step);
-        char req = *line.substr(line.find("Step")+5,1).c_str();
-        Require.push_back(req);
-        //cout << "Step: " << step  << " Require " << req << '\n';
-    }
-
-    //cout << "Steps: " << Step << "\nRequires: " << Require <<'\n';
-    vector<char> stepsList = Step;
-    string answer;
-    //string::iterator req_iter = Require.begin();
-    //string::iterator step_iter = Step.begin();
-    bool first = false;
-    size_t PosA,PosB,ErasePos;
-    vector<char> PossibleInstructions;
-    while (!Require.empty())
-    {
-        vector<char>::iterator step_iter;
-        vector<char>::iterator req_iter;
+        char step = line[36];
+        char req = line[5];
+        vector<workItem>::iterator iter = find_if(work.begin(), work.end(), [&] (const workItem & item) 
+        { 
+            //cout << "item instruction: "<< item.workinstruction << " and charMap " << charMap[step]<< " Letter: "<< step<<'\n';
+            return item.workinstruction == charMap[step]; 
+        } );
         
-        for(auto start = 0U; start!=Require.size(); start++)
+        
+        if(iter != work.end())
         {
-            req_iter = Require.begin()+start;
-            PosA=start;
-            PosB=0;
-            ErasePos=0;
-            first = false;
-            while(!first)
-            {
-                step_iter = find(Step.begin(),Step.end(),*req_iter);
-                //PosB = PosA;
-                if(step_iter != Step.end())
-                {
-                    PosA = distance(Step.begin(),step_iter);
-                    req_iter = (Require.begin()+PosA);
-                    //cout<<"Strings Req: "<< Require[PosA]<<'\n';
-                    //cout<<"Strings Step: "<< Step[PosA]<<'\n';
-                }
-                else
-                {
-                    //cout<<"Found first\n"; 
-                    first = true;
-                }
-            }
-            
-            PossibleInstructions.push_back(*req_iter);
-            //cout<< "Get Value? : "<< *req_iter <<'\n';
+            //(*iter).addRequirement(charMap[req]);
+            cout<<"Add existing!\n";
         }
-
-        sort( PossibleInstructions.begin(), PossibleInstructions.end() );
-        PossibleInstructions.erase( unique( PossibleInstructions.begin(), PossibleInstructions.end() ), PossibleInstructions.end() );
-
-/*
-        cout << "Possible instructions: ";
-        for(auto instructions : PossibleInstructions)
+        else
         {
-            cout<<instructions<< " ";
+            //cout<<"Add New!\n";
+            work.push_back(workItem(charMap[step],charMap[req]));
         }
-        cout << '\n';
-        */
-        req_iter = Require.begin();
-        while(req_iter != Require.end())
-        {
-            req_iter = find(Require.begin(),Require.end(),PossibleInstructions[0]);
-            
-            if(req_iter != Require.end())
-            {
-                //cout<<"Removal of char: "<< *req_iter << " Eh: " << PossibleInstructions[0]<<'\n';
-                Require.erase(req_iter);
-                step_iter = (Step.begin()+ distance(Require.begin(),req_iter));
-                Step.erase(step_iter);
-            }
-        }
-        answer.append(string(1,PossibleInstructions[0]));
-        PossibleInstructions.clear();
     }
 
-    for(auto instr : stepsList)
+    bool allDone = false;
+    int time = 0;
+    int next_event = 0;
+    int availableWorkers = 5;
+    while(!allDone)
     {
-        if(answer.find(instr) == string::npos)
-        {  
-            answer.append(string(1,instr));
+        allDone = true;
+        time +=next_event;
+        //cout<<"Timestamp: "<<time<<'\n';
+        // Update of times
+        for(auto item: work)
+        {
+            if(!item.isDone() && item.Taken)
+            {
+                item.reduceTime(next_event);
+            }
+        }
+        // Check of status
+        for(auto item: work)
+        {
+            if(item.isDone() && item.Taken)
+            {
+                workDone.push_back(item.workinstruction);
+                availableWorkers++;
+                item.Taken = false;
+                cout<<"Task Done!\n";
+            }
+            else
+            {
+                allDone = false;
+                if(available(item,workDone))
+                {
+                    if(availableWorkers>0)
+                    {
+                        cout<<"Taking new Task!\n";
+                        item.Taken = true;
+                        availableWorkers--;
+                    }
+                }
+            }
+
+            if(item.timeLeft<next_event && (item.Taken != 0))
+            {
+                next_event = item.timeLeft;
+            }
         }
     }
 
-    cout <<"Answer: "<< answer<< '\n';
+    cout<<"TotalTime: "<<time<< " seconds\n";
     return 0;
 } // CABDF

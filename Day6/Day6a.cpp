@@ -93,6 +93,7 @@ int main()
     int size_y = size_max_y->Pos.second+2;
     
     cout << "X: "<<size_x<<" Y: "<<size_y<<'\n';
+    // Matrix!
     static vector<vector<int>> field(size_x,vector<int>(size_y));
   
     for(auto coord = 0;coord<size_x; coord++)
