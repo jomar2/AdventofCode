@@ -103,7 +103,7 @@ void drawMessage(vector<pair<int,int>> input)
  
     // Best Matrix setup!!
     cout << "Max x: "<< max_x <<" Min x: "<< min_x<<  " Max y: "<< max_y << " Min y: "<< min_y<< "\nGives total area of: "<<sizex<<"x"<<sizey<<'\n';
-    vector<vector<char>> field(sizex,vector<char>(sizey,'.'));;
+    vector<vector<char>> field(sizex,vector<char>(sizey,'.'));
     vector<pair<int,int>> drawingVector;
     drawingVector.reserve(input.size());
     drawingVector = input;

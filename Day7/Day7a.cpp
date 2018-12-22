@@ -68,8 +68,6 @@ int main()
                 {
                     PosA = distance(Step.begin(),step_iter);
                     req_iter = (Require.begin()+PosA);
-                    //cout<<"Strings Req: "<< Require[PosA]<<'\n';
-                    //cout<<"Strings Step: "<< Step[PosA]<<'\n';
                 }
                 else
                 {
